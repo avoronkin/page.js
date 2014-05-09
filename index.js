@@ -123,7 +123,8 @@
 
   page.show = function(path, state, dispatch){
     var ctx = new Context(path, state);
-    if (false !== dispatch) page.dispatch(ctx);
+    var output = {};
+    if (false !== dispatch) page.dispatch(ctx, output);
     if (!ctx.unhandled) ctx.pushState();
     return ctx;
   };
@@ -139,9 +140,10 @@
 
   page.replace = function(path, state, init, dispatch){
     var ctx = new Context(path, state);
+    var output = {};
     ctx.init = init;
     if (null == dispatch) dispatch = true;
-    if (dispatch) page.dispatch(ctx);
+    if (dispatch) page.dispatch(ctx, output);
     ctx.save();
     return ctx;
   };
@@ -153,13 +155,13 @@
    * @api private
    */
 
-  page.dispatch = function(ctx){
+  page.dispatch = function(ctx, output){
     var i = 0;
 
     function next() {
       var fn = page.callbacks[i++];
-      if (!fn) return unhandled(ctx);
-      fn(ctx, next);
+      if (!fn) return unhandled(ctx, output);
+      fn(ctx, output, next);
     }
 
     next();
@@ -174,7 +176,7 @@
    * @api private
    */
 
-  function unhandled(ctx) {
+  function unhandled(ctx, output) {
     var current = window.location.pathname + window.location.search;
     if (current == ctx.canonicalPath) return;
     page.stop();
@@ -281,8 +283,8 @@
 
   Route.prototype.middleware = function(fn){
     var self = this;
-    return function(ctx, next){
-      if (self.match(ctx.path, ctx.params)) return fn(ctx, next);
+    return function(ctx, output, next){
+      if (self.match(ctx.path, ctx.params)) return fn(ctx, output, next);
       next();
     };
   };
